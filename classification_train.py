@@ -211,16 +211,14 @@ if __name__ == '__main__':
         print('Start hyperparameter search with Bayesian '
               'optimization for {:d} trials'.format(args['num_evals']))
         trial_path = bayesian_optimization(args, train_set, val_set, test_set)
+        wandb.save(trial_path+ '/model.pth')
+        wandb.save(trial_path+ '/configure.json')
+        wandb.save(trial_path+ '/eval.txt')
     else:
         print('Use the manually specified hyperparameters')
         exp_config = get_configure(args['model'])
         main(args, exp_config, train_set, val_set, test_set)
-        #trial_path = args['result_path'] + '/1'
+        wandb.save(args['trial_path']+ '/model.pth')
+        wandb.save(args['trial_path']+ '/configure.json')
+        wandb.save(args['trial_path']+ '/eval.txt')
 
-    # Copy final
-    #copyfile(trial_path + '/model.pth', args['result_path'] + '/model.pth')
-    #copyfile(trial_path + '/configure.json', args['result_path'] + '/configure.json')
-    #copyfile(trial_path + '/eval.txt', args['result_path'] + '/eval.txt')
-    wandb.save(args['trial_path']+ '/model.pth')
-    wandb.save(args['trial_path']+ '/configure.json')
-    wandb.save(args['trial_path']+ '/eval.txt')

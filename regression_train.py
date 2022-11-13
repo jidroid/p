@@ -171,10 +171,10 @@ if __name__ == '__main__':
                                                    'gin_supervised_masking',
                                                    'NF'],
                         default='GCN', help='Model to use (default: GCN)')
-    parser.add_argument('-a', '--atom-featurizer-type', choices=['canonical', 'attentivefp'],
+    parser.add_argument('-a', '--atom-featurizer-type', choices=['canonical', 'attentivefp','pagtn','weave'],
                         default='canonical',
                         help='Featurization for atoms (default: canonical)')
-    parser.add_argument('-b', '--bond-featurizer-type', choices=['canonical', 'attentivefp'],
+    parser.add_argument('-b', '--bond-featurizer-type', choices=['canonical', 'attentivefp','pagtn','weave'],
                         default='canonical',
                         help='Featurization for bonds (default: canonical)')
     parser.add_argument('-n', '--num-epochs', type=int, default=1000,

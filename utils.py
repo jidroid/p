@@ -36,6 +36,12 @@ def init_featurizer(args):
     elif args['atom_featurizer_type'] == 'attentivefp':
         from dgllife.utils import AttentiveFPAtomFeaturizer
         args['node_featurizer'] = AttentiveFPAtomFeaturizer()
+    elif args['atom_featurizer_type'] == 'pagtn':
+        from dgllife.utils import PAGTNAtomFeaturizer
+        args['node_featurizer'] = PAGTNAtomFeaturizer()
+    elif args['atom_featurizer_type'] == 'weave':
+        from dgllife.utils import WeaveAtomFeaturizer
+        args['node_featurizer'] = WeaveAtomFeaturizer()
     else:
         return ValueError(
             "Expect node_featurizer to be in ['canonical', 'attentivefp'], "
@@ -48,6 +54,12 @@ def init_featurizer(args):
         elif args['bond_featurizer_type'] == 'attentivefp':
             from dgllife.utils import AttentiveFPBondFeaturizer
             args['edge_featurizer'] = AttentiveFPBondFeaturizer(self_loop=True)
+        elif args['bond_featurizer_type'] == 'pagtn':
+            from dgllife.utils import PAGTNEdgeFeaturizer
+            args['edge_featurizer'] = PAGTNEdgeFeaturizer()
+        elif args['bond_featurizer_type'] == 'weave':
+            from dgllife.utils import WeaveEdgeFeaturizer
+            args['edge_featurizer'] = WeaveEdgeFeaturizer()
     else:
         args['edge_featurizer'] = None
 

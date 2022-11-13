@@ -10,7 +10,8 @@ from hyperopt import fmin, tpe
 from shutil import copyfile
 from torch.optim import Adam
 from torch.utils.data import DataLoader
-
+from torchmetrics import F1Score,ConfusionMatrix
+from torchmetrics.functional import precision_recall
 from hyper import init_hyper_space
 from utils import get_configure, mkdir_p, init_trial_path, \
     split_dataset, collate_molgraphs, load_model, predict, init_featurizer, load_dataset
@@ -42,13 +43,31 @@ def run_a_train_epoch(args, epoch, model, data_loader, loss_criterion, optimizer
     wandb.log({"Traning Loss": loss.item(),"Epoch": epoch + 1})
     wandb.log({f"Traning {args['metric']}": train_score,"Epoch": epoch + 1})
 
+def run_test_epoch(args, model, data_loader):
+    model.eval()
+    eval_meter = Meter()
+    with torch.no_grad():
+        for batch_id, batch_data in enumerate(data_loader):
+            smiles, bg, labels, masks = batch_data
+            targets=labels.type(torch.int64)
+            targets = targets.to(args['device'])
+            logits = predict(args, model, bg)
+            confmat = ConfusionMatrix(num_classes=2).to(args['device'])
+            print(f'Confusion Matrix: {confmat(logits, targets)}')
+            print(f'Precision Recall{precision_recall(logits,targets)}')
+            f1 = F1Score().to(args['device'])
+            print(f'F1 score: {f1(logits,targets)}')
+            eval_meter.update(logits, labels, masks)
+    return np.mean(eval_meter.compute_metric(args['metric']))
+    
 def run_an_eval_epoch(args, model, data_loader):
     model.eval()
     eval_meter = Meter()
     with torch.no_grad():
         for batch_id, batch_data in enumerate(data_loader):
             smiles, bg, labels, masks = batch_data
-            labels = labels.to(args['device'])
+            targets=labels.type(torch.int64)
+            targets = targets.to(args['device'])
             logits = predict(args, model, bg)
             eval_meter.update(logits, labels, masks)
     return np.mean(eval_meter.compute_metric(args['metric']))
@@ -99,7 +118,7 @@ def main(args, exp_config, train_set, val_set, test_set):
             break
 
     stopper.load_checkpoint(model)
-    test_score = run_an_eval_epoch(args, model, test_loader)
+    test_score = run_test_epoch(args, model, test_loader)
     print('test {} {:.4f}'.format(args['metric'], test_score))
     wandb.log({f"Test {args['metric']}": val_score})
     with open(args['trial_path'] + '/eval.txt', 'w') as f:

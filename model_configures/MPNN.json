@@ -1,7 +1,7 @@
 {
   "lr": 3e-4,
   "weight_decay": 0,
-  "patience": 30,
+  "patience": 25,
   "batch_size": 128,
   "node_out_feats": 64,
   "edge_hidden_feats": 128,

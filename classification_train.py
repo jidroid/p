@@ -11,12 +11,14 @@ from shutil import copyfile
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torchmetrics import F1Score,ConfusionMatrix
+from torchmetrics.classification import BinaryAUROC,BinaryPrecision, BinaryRecall
 from torchmetrics.functional import precision_recall
 from hyper import init_hyper_space
 from utils import get_configure, mkdir_p, init_trial_path, \
     split_dataset, collate_molgraphs, load_model, predict, init_featurizer, load_dataset
 import wandb
-wandb.init()
+run = wandb.init(project="B3DB-classification")
+
 def run_a_train_epoch(args, epoch, model, data_loader, loss_criterion, optimizer):
     model.train()
     train_meter = Meter()
@@ -53,11 +55,24 @@ def run_test_epoch(args, model, data_loader):
             targets = targets.to(args['device'])
             logits = predict(args, model, bg)
             confmat = ConfusionMatrix(num_classes=2).to(args['device'])
-            print(f'Confusion Matrix: {confmat(logits, targets)}')
-            print(f'Precision Recall{precision_recall(logits,targets)}')
+            matrix=confmat(logits, targets)
+            print(f'Test Confusion Matrix: {matrix}')
+            precision = BinaryPrecision().to(args['device'])
+            pre=precision(logits,targets)
+            print(f'Test Precision: {pre}')
+            recall = BinaryRecall().to(args['device'])
+            rec=recall(logits,targets)
+            print(f'Test Recall: {rec}')
             f1 = F1Score().to(args['device'])
-            print(f'F1 score: {f1(logits,targets)}')
+            f1sco=f1(logits,targets)
+            print(f'Test F1 score: {f1sco}')
+            auroc = BinaryAUROC().to(args['device'])
+            aurocsco=auroc(logits,targets)
+            print(f'Test AUROC: {aurocsco}')
+            wandb.log({"Test AUROC":aurocsco,"Test F1 score": f1sco,"Test Precision": pre,"Test Recall": rec})
             eval_meter.update(logits, labels, masks)
+
+
     return np.mean(eval_meter.compute_metric(args['metric']))
     
 def run_an_eval_epoch(args, model, data_loader):
@@ -92,7 +107,7 @@ def main(args, exp_config, train_set, val_set, test_set):
                               collate_fn=collate_molgraphs, num_workers=args['num_workers'])
     val_loader = DataLoader(dataset=val_set, batch_size=exp_config['batch_size'],
                             collate_fn=collate_molgraphs, num_workers=args['num_workers'])
-    test_loader = DataLoader(dataset=test_set, batch_size=exp_config['batch_size'],
+    test_loader = DataLoader(dataset=test_set, batch_size=1024,
                              collate_fn=collate_molgraphs, num_workers=args['num_workers'])
     model = load_model(exp_config).to(args['device'])
 
@@ -120,7 +135,6 @@ def main(args, exp_config, train_set, val_set, test_set):
     stopper.load_checkpoint(model)
     test_score = run_test_epoch(args, model, test_loader)
     print('test {} {:.4f}'.format(args['metric'], test_score))
-    wandb.log({f"Test {args['metric']}": val_score})
     with open(args['trial_path'] + '/eval.txt', 'w') as f:
         f.write('Best val {}: {}\n'.format(args['metric'], stopper.best_score))
         f.write('Test {}: {}\n'.format(args['metric'], test_score))
@@ -240,4 +254,4 @@ if __name__ == '__main__':
         wandb.save(args['trial_path']+ '/model.pth')
         wandb.save(args['trial_path']+ '/configure.json')
         wandb.save(args['trial_path']+ '/eval.txt')
-
+run.finish()

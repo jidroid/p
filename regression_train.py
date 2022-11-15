@@ -14,8 +14,9 @@ from torch.utils.data import DataLoader
 from hyper import init_hyper_space
 from utils import get_configure, mkdir_p, init_trial_path, \
     split_dataset, collate_molgraphs, load_model, predict, init_featurizer, load_dataset
+from torchmetrics import MeanAbsoluteError, MeanAbsolutePercentageError, R2Score,MeanSquaredError
 import wandb
-wandb.init()
+wandb.init(project="X-regression-A-B-C")
 
 def run_a_train_epoch(args, epoch, model, data_loader, loss_criterion, optimizer):
     model.train()
@@ -53,6 +54,26 @@ def run_an_eval_epoch(args, model, data_loader):
             eval_meter.update(prediction, labels, masks)
     return np.mean(eval_meter.compute_metric(args['metric']))
 
+def run_test_epoch(args, model, data_loader):
+    model.eval()
+    eval_meter = Meter()
+    with torch.no_grad():
+        for batch_id, batch_data in enumerate(data_loader):
+            smiles, bg, labels, masks = batch_data
+            labels = labels.to(args['device'])
+            prediction = predict(args, model, bg)
+            mean_absolute_error = MeanAbsoluteError().to(args['device'])
+            mean_abs_percentage_error = MeanAbsolutePercentageError().to(args['device'])
+            r2score = R2Score().to(args['device'])
+            mean_squared_error = MeanSquaredError().to(args['device'])
+            mae=mean_absolute_error(prediction, labels)
+            mape=mean_abs_percentage_error(prediction, labels)
+            r2=r2score(prediction, labels)
+            mse=mean_squared_error(prediction, labels)
+            wandb.log({"Test MAE":mae,"Test MAPE": mape,"Test R2": r2,"Test MSE": mse})
+            eval_meter.update(prediction, labels, masks)
+    return np.mean(eval_meter.compute_metric(args['metric']))
+
 def main(args, exp_config, train_set, val_set, test_set):
     # Record settings
     exp_config.update({
@@ -73,7 +94,7 @@ def main(args, exp_config, train_set, val_set, test_set):
                               collate_fn=collate_molgraphs, num_workers=args['num_workers'])
     val_loader = DataLoader(dataset=val_set, batch_size=exp_config['batch_size'],
                             collate_fn=collate_molgraphs, num_workers=args['num_workers'])
-    test_loader = DataLoader(dataset=test_set, batch_size=exp_config['batch_size'],
+    test_loader = DataLoader(dataset=test_set, batch_size=1024,
                              collate_fn=collate_molgraphs, num_workers=args['num_workers'])
     model = load_model(exp_config).to(args['device'])
 
@@ -99,7 +120,7 @@ def main(args, exp_config, train_set, val_set, test_set):
             break
 
     stopper.load_checkpoint(model)
-    test_score = run_an_eval_epoch(args, model, test_loader)
+    test_score = run_test_epoch(args, model, test_loader)
     print('test {} {:.4f}'.format(args['metric'], test_score))
     wandb.log({f"Test {args['metric']}": val_score})
     with open(args['trial_path'] + '/eval.txt', 'w') as f:

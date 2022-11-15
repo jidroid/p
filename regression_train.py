@@ -16,7 +16,7 @@ from utils import get_configure, mkdir_p, init_trial_path, \
     split_dataset, collate_molgraphs, load_model, predict, init_featurizer, load_dataset
 from torchmetrics import MeanAbsoluteError, MeanAbsolutePercentageError, R2Score,MeanSquaredError
 import wandb
-wandb.init(project="X-regression-A-B-C")
+run = wandb.init(project="X-regression-A-B-C")
 
 def run_a_train_epoch(args, epoch, model, data_loader, loss_criterion, optimizer):
     model.train()
@@ -246,4 +246,4 @@ if __name__ == '__main__':
         wandb.save(args['trial_path']+ '/model.pth')
         wandb.save(args['trial_path']+ '/configure.json')
         wandb.save(args['trial_path']+ '/eval.txt')
-
+run.finish()

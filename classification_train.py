@@ -17,7 +17,7 @@ from hyper import init_hyper_space
 from utils import get_configure, mkdir_p, init_trial_path, \
     split_dataset, collate_molgraphs, load_model, predict, init_featurizer, load_dataset
 import wandb
-run = wandb.init(project="B3DB-classification-MPNN-AFP-AFP")
+run = wandb.init(project="B3DB-classification-X-Y-Z")
 
 def run_a_train_epoch(args, epoch, model, data_loader, loss_criterion, optimizer):
     model.train()

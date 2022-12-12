@@ -6,14 +6,12 @@ import torch.nn as nn
 
 from copy import deepcopy
 from dgllife.utils import Meter, EarlyStopping
-from hyperopt import fmin, tpe
 from shutil import copyfile
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torchmetrics import F1Score,ConfusionMatrix
 from torchmetrics.classification import BinaryAUROC,BinaryPrecision, BinaryRecall
 from torchmetrics.functional import precision_recall
-from hyper import init_hyper_space
 from utils import get_configure, mkdir_p, init_trial_path, \
     split_dataset, collate_molgraphs, load_model, predict, init_featurizer, load_dataset
 import wandb
@@ -144,31 +142,6 @@ def main(args, exp_config, train_set, val_set, test_set):
 
     return args['trial_path'], stopper.best_score
 
-def bayesian_optimization(args, train_set, val_set, test_set):
-    # Run grid search
-    results = []
-
-    candidate_hypers = init_hyper_space(args['model'])
-
-    def objective(hyperparams):
-        configure = deepcopy(args)
-        trial_path, val_metric = main(configure, hyperparams, train_set, val_set, test_set)
-
-        if args['metric'] in ['roc_auc_score', 'pr_auc_score']:
-            # Maximize ROCAUC is equivalent to minimize the negative of it
-            val_metric_to_minimize = -1 * val_metric
-        else:
-            val_metric_to_minimize = val_metric
-
-        results.append((trial_path, val_metric_to_minimize))
-
-        return val_metric_to_minimize
-
-    fmin(objective, candidate_hypers, algo=tpe.suggest, max_evals=args['num_evals'])
-    results.sort(key=lambda tup: tup[1])
-    best_trial_path, best_val_metric = results[0]
-
-    return best_trial_path
 
 if __name__ == '__main__':
     from argparse import ArgumentParser

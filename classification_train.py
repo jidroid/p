@@ -10,8 +10,7 @@ from shutil import copyfile
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torchmetrics import F1Score,ConfusionMatrix
-from torchmetrics.classification import BinaryAUROC,BinaryPrecision, BinaryRecall
-from torchmetrics.functional import precision_recall
+from torchmetrics.classification import BinaryAUROC,BinaryPrecision, BinaryRecall,BinarySpecificity
 from utils import get_configure, mkdir_p, init_trial_path, \
     split_dataset, collate_molgraphs, load_model, predict, init_featurizer, load_dataset
 import wandb
@@ -60,14 +59,17 @@ def run_test_epoch(args, model, data_loader):
             print(f'Test Precision: {pre}')
             recall = BinaryRecall().to(args['device'])
             rec=recall(logits,targets)
-            print(f'Test Recall: {rec}')
+            print(f'Test Sensitivity: {rec}')
             f1 = F1Score().to(args['device'])
             f1sco=f1(logits,targets)
             print(f'Test F1 score: {f1sco}')
             auroc = BinaryAUROC().to(args['device'])
             aurocsco=auroc(logits,targets)
             print(f'Test AUROC: {aurocsco}')
-            wandb.log({"Test AUROC":aurocsco,"Test F1 score": f1sco,"Test Precision": pre,"Test Recall": rec})
+            specifi = BinarySpecificity().to(args['device'])
+            specificity=specifi(logits,targets)
+            print(f'Test Specificity: {specificity}')
+            wandb.log({"Test AUROC":aurocsco,"Test F1 score": f1sco,"Test Precision": pre,"Test Sensitivity": rec,"Test Specificity": specificity})
             eval_meter.update(logits, labels, masks)
 
 

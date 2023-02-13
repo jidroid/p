@@ -7,7 +7,7 @@ import torch.nn as nn
 from copy import deepcopy
 from dgllife.utils import Meter, EarlyStopping
 from shutil import copyfile
-from torch.optim import Adam
+from torch.optim import Adam,SGD
 from torch.utils.data import DataLoader
 from torchmetrics import F1Score,ConfusionMatrix
 from torchmetrics.classification import BinaryAUROC,BinaryPrecision, BinaryRecall,BinarySpecificity
@@ -111,8 +111,8 @@ def main(args, exp_config, train_set, val_set, test_set):
                              collate_fn=collate_molgraphs, num_workers=args['num_workers'])
     model = load_model(exp_config).to(args['device'])
 
-    loss_criterion = nn.BCEWithLogitsLoss(reduction='none')
-    optimizer = Adam(model.parameters(), lr=exp_config['lr'],
+    loss_criterion = nn.BCELoss()
+    optimizer = SGD(model.parameters(), lr=exp_config['lr'],
                      weight_decay=exp_config['weight_decay'])
     stopper = EarlyStopping(patience=exp_config['patience'],
                             filename=args['trial_path'] + '/model.pth',

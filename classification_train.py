@@ -1,4 +1,4 @@
-
+import warnings
 import json
 import pandas as pd
 import numpy as np
@@ -16,7 +16,7 @@ from utils import get_configure, mkdir_p, init_trial_path, \
     split_dataset, collate_molgraphs, load_model, predict, init_featurizer, load_dataset
 import wandb
 run = wandb.init(project="J-classification-X-Y-Z")
-
+warnings.filterwarnings('ignore', module='torchmetrics')
 def run_a_train_epoch(args, epoch, model, data_loader, loss_criterion, optimizer):
     model.train()
     train_meter = Meter()

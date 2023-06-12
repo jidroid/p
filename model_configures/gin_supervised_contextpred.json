@@ -3,6 +3,6 @@
   "weight_decay": 0,
   "patience": 25,
   "batch_size": 128,
-  "jk": "last",
+  "jk": "concat",
   "readout": "sum"
 }

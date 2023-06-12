@@ -4,5 +4,5 @@
   "patience": 25,
   "batch_size": 128,
   "jk": "concat",
-  "readout": "sum"
+  "readout": "attention"
 }

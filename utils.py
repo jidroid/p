@@ -56,7 +56,7 @@ def init_featurizer(args):
             args['edge_featurizer'] = AttentiveFPBondFeaturizer(self_loop=True)
         elif args['bond_featurizer_type'] == 'pagtn':
             from dgllife.utils import PAGTNEdgeFeaturizer
-            args['edge_featurizer'] = PAGTNEdgeFeaturizer(max_length=15)
+            args['edge_featurizer'] = PAGTNEdgeFeaturizer(max_length=8)
         elif args['bond_featurizer_type'] == 'weave':
             from dgllife.utils import WeaveEdgeFeaturizer
             args['edge_featurizer'] = WeaveEdgeFeaturizer()
